@@ -1,71 +1,79 @@
 #include <iostream>
-#include <SFML/Audio.hpp>
-#include <SFML/Graphics.hpp>
-#include <SFML/Window.hpp>
+#include <SFML/Audio.hpp>  // SFML for audio
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
+#include "raylib.h"        // Raylib for graphics
 
-void extract_metadata(const std::string& filename) {
+struct SongMetadata {
+    std::string title = "Unknown Title";
+    std::string artist = "Unknown Artist";
+    std::string album = "Unknown Album";
+};
+
+SongMetadata extract_metadata(const std::string& filename) {
+    SongMetadata metadata;
     TagLib::FileRef file(filename.c_str());
     if (!file.isNull() && file.tag()) {
         TagLib::Tag *tag = file.tag();
-        std::cout << "Title: "  << tag->title().to8Bit()  << std::endl;
-        std::cout << "Artist: " << tag->artist().to8Bit() << std::endl;
-        std::cout << "Album: "  << tag->album().to8Bit()  << std::endl;
+        metadata.title = tag->title().to8Bit();
+        metadata.artist = tag->artist().to8Bit();
+        metadata.album = tag->album().to8Bit();
     } else {
         std::cerr << "Error: Unable to read metadata from " << filename << std::endl;
     }
+    return metadata;
 }
 
 int main() {
-    std::string filename = "test.mp3"; // Change this to your file
+    std::string filename = "test2.flac"; // Change this to your file
+    SongMetadata metadata = extract_metadata(filename); // Get metadata
 
-    extract_metadata(filename); // Print metadata before playing
-
+    // Initialize SFML audio
     sf::Music music;
     if (!music.openFromFile(filename)) {
         std::cerr << "Error: Unable to play file " << filename << "\n";
         return 1;
     }
-
-    std::cout << "Playing: " << filename << std::endl;
     music.play();
 
-    // Create a window
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "Jamfin Audio Player");
+    // Initialize Raylib window
+    const int screenWidth = 800;
+    const int screenHeight = 600;
+    InitWindow(screenWidth, screenHeight, "Jamfin - Raylib UI + SFML Audio");
+    SetTargetFPS(60);
 
     float pitch = 1.0f; // Default pitch
 
-    while (window.isOpen()) {
-        while (auto event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
-                window.close();
-            }
-        }
-
-        // Check if + or - is pressed using real-time input (Scancode)
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up)) { // + Key
+    while (!WindowShouldClose()) {
+        // Handle pitch changes with Raylib keyboard input
+        if (IsKeyPressed(KEY_EQUAL)) {  // + Key
             pitch += 0.1f;
             music.setPitch(pitch);
-            std::cout << "Pitch Increased: " << pitch << std::endl;
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down)) { // - Key
-            if (pitch > 0.1f) { // Prevent negative pitch
+        if (IsKeyPressed(KEY_MINUS)) {  // - Key
+            if (pitch > 0.1f) {
                 pitch -= 0.1f;
                 music.setPitch(pitch);
-                std::cout << "Pitch Decreased: " << pitch << std::endl;
             }
         }
-
-        window.clear(sf::Color::Black);
-        window.display();
 
         // Stop playing if the music is finished
         if (music.getStatus() != sf::SoundSource::Status::Playing)
-            window.close();
+            break;
 
-        sf::sleep(sf::milliseconds(100));
+        // Draw UI using Raylib
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        DrawText((metadata.title).c_str(), 20, 100, 30, WHITE);
+        DrawText((metadata.artist).c_str(), 20, 140, 20, GREEN);
+        DrawText((metadata.album).c_str(), 20, 180, 20, GREEN);
+        DrawText(("Pitch: " + std::to_string(pitch)).c_str(), 20, 220, 20, YELLOW);
+
+        EndDrawing();
     }
 
+    // Cleanup
+    CloseWindow(); // Close Raylib window
     return 0;
 }
