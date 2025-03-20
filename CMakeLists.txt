@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.28)
 project(Jamfin LANGUAGES CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -16,4 +16,4 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(TAGLIB REQUIRED IMPORTED_TARGET taglib)
 add_executable(jamfin main.cpp)
 target_compile_features(jamfin PRIVATE cxx_std_17)
-target_link_libraries(jamfin PRIVATE SFML::Audio PkgConfig::TAGLIB)
+target_link_libraries(jamfin PRIVATE SFML::Audio SFML::Window SFML::Graphics PkgConfig::TAGLIB)
